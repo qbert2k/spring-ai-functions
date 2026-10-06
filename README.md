@@ -16,6 +16,26 @@ the returned data to answer a natural-language question.
    the model.
 5. The model turns the weather response into a useful answer.
 
+```mermaid
+flowchart TD
+    User[User question] --> Controller[POST /weather]
+    Controller --> Service[OpenAIServiceImpl]
+    Service --> OpenAI[OpenAI chat model]
+
+    OpenAI --> Decision{Which information is needed?}
+    Decision -->|Weather with coordinates| CurrentWeather[CurrentWeather function]
+    Decision -->|City details or city name| CityInfo[CityInfo function]
+    CityInfo --> CityApi[API Ninjas City API]
+    CityApi --> CityData[City name, region, population, latitude, longitude]
+    CityData -->|Use returned coordinates| CurrentWeather
+    CurrentWeather --> WeatherApi[API Ninjas Weather API]
+    WeatherApi --> WeatherData[Weather response]
+    WeatherData --> OpenAI
+    CityData --> OpenAI
+    OpenAI --> Answer[Natural-language answer]
+    Answer --> Controller
+```
+
 The function input is a latitude and longitude:
 
 ```json
