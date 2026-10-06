@@ -21,13 +21,11 @@ public class WeatherServiceFunction implements Function<WeatherRequest, WeatherR
 
     @Override
     public WeatherResponse apply(WeatherRequest weatherRequest) {
-        RestClient restClient = RestClient.builder()
-                .baseUrl(WEATHER_URL)
-                .defaultHeaders(httpHeaders -> {
-                    httpHeaders.set("X-Api-Key", apiNinjasKey);
-                    httpHeaders.set("Accept", "application/json");
-                    httpHeaders.set("Content-Type", "application/json");
-                }).build();
+        RestClient restClient = RestClient.builder().baseUrl(WEATHER_URL).defaultHeaders(httpHeaders -> {
+            httpHeaders.set("X-Api-Key", apiNinjasKey);
+            httpHeaders.set("Accept", "application/json");
+            httpHeaders.set("Content-Type", "application/json");
+        }).build();
 
         return restClient.get().uri(uriBuilder -> {
             System.out.println("Building URI for weather request: " + weatherRequest);
@@ -44,26 +42,3 @@ public class WeatherServiceFunction implements Function<WeatherRequest, WeatherR
         }).retrieve().body(WeatherResponse.class);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
