@@ -1,39 +1,170 @@
 # Spring AI Functions
 
-This repository contains source code examples used to support my on-line courses about the Spring Framework.
+This is a small Spring Boot application that demonstrates how to expose a Java
+function to an OpenAI chat model with Spring AI. The model can call a weather
+function backed by [API Ninjas](https://api-ninjas.com/api/weather), then use
+the returned data to answer a natural-language question.
 
-## All Spring Framework Guru Courses
-### Spring Framework 6
-* [Spring Framework 6 - Beginner to Guru](https://www.udemy.com/course/spring-framework-6-beginner-to-guru/?referralCode=2BD0B7B7B6B511D699A9)
-* [Hibernate and Spring Data JPA: Beginner to Guru](https://www.udemy.com/course/hibernate-and-spring-data-jpa-beginner-to-guru/?referralCode=251C4C865302C7B1BB8F)
-* [API First Engineering with Spring Boot](https://www.udemy.com/course/api-first-engineering-with-spring-boot/?referralCode=C6DAEE7338215A2CF276)
-* [Introduction to Kafka with Spring Boot](https://www.udemy.com/course/introduction-to-kafka-with-spring-boot/?referralCode=15118530CA63AD1AF16D)
-* [Spring Security: Beginner to Guru](https://www.udemy.com/course/spring-security-core-beginner-to-guru/?referralCode=306F288EB78688C0F3BC)
+## How it works
 
-### Spring Framework 5
-* [Spring Framework 5: Beginner to Guru](https://www.udemy.com/testing-spring-boot-beginner-to-guru/?couponCode=GITHUB_REPO) - Get the most modern and comprehensive course available for the Spring Framework! Join over 17,200 over Guru's in an Slack community exclusive to this course! More than 5,700 students have given this 53 hour course a 5 star review!
-* [Spring Boot Microservices with Spring Cloud Beginner to Guru](https://www.udemy.com/course/spring-boot-microservices-with-spring-cloud-beginner-to-guru/?referralCode=6142D427AE53031FEF38) - Master Microservice Architectures Using Spring Boot 2 and Cloud Based Deployments with Spring Cloud and Docker
-* [Reactive Programming with Spring Framework 5](https://www.udemy.com/reactive-programming-with-spring-framework-5/?couponCode=GITHUB_REPO_SF5B2G) - Keep your skills razor sharp and take a deep dive into Reactive Programming!
-* [Testing Spring Boot: Beginner to Guru](https://www.udemy.com/testing-spring-boot-beginner-to-guru/?couponCode=GITHUB_REPO_SF5B2G) - ** Best Selling Course** Become an expert in testing Java and Spring Applications with JUnit 5, Mockito and much more!
+1. The application accepts a question at `POST /weather`.
+2. Spring AI sends the question and the `CurrentWeather` function definition to
+   OpenAI.
+3. When weather data is needed, the model calls the Java
+   `WeatherServiceFunction`.
+4. The function calls API Ninjas using the latitude and longitude supplied by
+   the model.
+5. The model turns the weather response into a useful answer.
 
-### SQL
-* [SQL Beginner to Guru: MySQL Edition](https://www.udemy.com/sql-beginner-to-guru-mysql-edition/?couponCode=GITHUB_REPO_SF5B2G) - SQL is a fundamental must have skill, which employers are looking for. Learn to master SQL on MySQL, the worlds most popular database!
+The function input is a latitude and longitude:
 
-### DevOps
-* [Apache Maven: Beginner to Guru](https://www.udemy.com/apache-maven-beginner-to-guru/?couponCode=GITHUB_REPO_SF5B2G) - **Best Selling Course** Take the mystery out of Apache Maven. Learn how to use Maven to build your Java and Spring Boot projects!
-* [OpenAPI: Beginner to Guru](https://www.udemy.com/course/openapi-beginner-to-guru/?referralCode=0E7F511C749013CA6AAD) - Master OpenAPI (formerly Swagger) to Create Specifications for Your APIs
-* [OpenAPI: Specification With Redocly](https://www.udemy.com/course/openapi-specification-redocly-api-documentation/?referralCode=863C443928D61D9A3831)
-* [Docker for Java Developers](https://www.udemy.com/docker-for-java-developers/?couponCode=GITHUB_REPO_SF5B2G) - Best Selling Course on Udemy! Learn how you can supercharge your development by leveraging Docker. Collaborate with other students in a Slack community exclusive to the course!
-* [Spring Framework DevOps on AWS](https://www.udemy.com/spring-core-devops-on-aws/?couponCode=GITHUB_REPO_SF5B2G) - Learn how to build and deploy Spring applications on Amazon AWS!
-* [Ready for Production with Spring Boot Actuator](https://www.udemy.com/ready-for-production-with-spring-boot-actuator/?couponCode=GITHUB_REPO_SF5B2G) - Learn how to leverage Spring Boot Actuator to monitor your applications running in production.
+```json
+{
+  "lat": "53.350140",
+  "lon": "-6.266155"
+}
+```
 
-### Web Development with Spring Framework
-* [Mastering Thymeleaf with Spring Boot](https://www.udemy.com/mastering-thymeleaf-with-spring/?couponCode=GITHUB_REPO_SF5B2G) - Once you learn Thymeleaf, you'll never want to go back to using JSPs for web development!
+The response model includes the current condition, temperatures, humidity,
+cloud coverage, wind, sunrise and sunset times, and the available weather
+icons.
 
+## Requirements
 
-## Connect with Spring Framework Guru
-* Spring Framework Guru [Blog](https://springframework.guru/)
-* Subscribe to Spring Framework Guru on [YouTube](https://www.youtube.com/channel/UCrXb8NaMPQCQkT8yMP_hSkw)
-* Like Spring Framework Guru on [Facebook](https://www.facebook.com/springframeworkguru/)
-* Follow Spring Framework Guru on [Twitter](https://twitter.com/spring_guru)
-* Connect with John Thompson on [LinkedIn](http://www.linkedin.com/in/springguru)
+- Java 21
+- Maven 3.9+ (or the included Maven Wrapper)
+- An [OpenAI API key](https://platform.openai.com/api-keys)
+- An [API Ninjas API key](https://api-ninjas.com/)
+
+## Configuration
+
+Set both API keys in the environment before starting the application. The
+application reads them from `OPENAI_API_KEY` and `API_NINJAS_KEY`; keys are
+never intended to be committed to the repository.
+
+```bash
+export OPENAI_API_KEY="your-openai-api-key"
+export API_NINJAS_KEY="your-api-ninjas-key"
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:OPENAI_API_KEY = "your-openai-api-key"
+$env:API_NINJAS_KEY = "your-api-ninjas-key"
+```
+
+## Run the application
+
+Start the application with the Maven Wrapper:
+
+```bash
+./mvnw spring-boot:run
+```
+
+On Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+The server listens on `http://localhost:8080`.
+
+## Try it with curl
+
+These examples can be pasted directly into a terminal while the application
+is running.
+
+### Dublin: outdoor clothes recommendation
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "What is the current weather at latitude 53.350140 and longitude -6.266155 in Dublin? Use metric units. Is it a good day to dry clothes outside? Explain your recommendation using the rain, humidity, wind, and temperature."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current weather in Dublin at latitude 53.350140 and longitude -6.266155 is 11°C with moderate rain. The humidity is quite high at 92%, and the wind is blowing at a speed of 3.6 km/h.\n\nGiven these conditions, it would not be a good day to dry clothes outside. The rain and high humidity mean that the clothes would not dry properly and may even get wetter if left outside. The wind, while not particularly strong, would not be enough to counteract the effects of the rain and humidity. Furthermore, the temperature is relatively low, which means the evaporation rate would be slow, making the drying process much longer."
+}
+```
+
+### New York: commute planning
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Check the weather at latitude 40.7128 and longitude -74.0060 in New York City. Should I bring an umbrella and a jacket for a 30-minute walk? Give a concise answer in Fahrenheit and miles per hour."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current weather in New York City is clear with a temperature of 62.6°F (converted from 17°C). The wind speed is approximately 11.5 miles per hour (converted from 5.14 m/s). Given these conditions, you won't need an umbrella. As for the jacket, it depends on your personal comfort level with this temperature. If you feel cold at around 63°F, you might want to bring a jacket for your 30-minute walk."
+}
+```
+
+### Sydney: compare conditions with a specific activity
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "What is the weather at latitude -33.8688 and longitude 151.2093 in Sydney? Is it suitable for an outdoor lunch right now? Mention the temperature, cloud cover, wind, and whether rain is expected."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current weather in Sydney is overcast with a cloud cover of 99%. The temperature is 15°C (59°F), with a wind speed of 12.35 km/h (7.67 mph) coming from the south. The humidity is at 62%. There's no mention of rain, but with such heavy cloud cover, you might want to keep an eye on the weather updates before deciding on an outdoor lunch."
+}
+```
+
+The request body contains one natural-language question. Include the location's
+latitude and longitude in the question so the model can populate the weather
+function arguments reliably. The model can convert units and tailor the answer,
+but the weather service itself returns metric values.
+
+## Build and test
+
+Compile and package without running tests:
+
+```bash
+./mvnw -DskipTests package
+```
+
+Run the test suite:
+
+```bash
+./mvnw test
+```
+
+Tests that load the Spring context require `OPENAI_API_KEY` and
+`API_NINJAS_KEY` to be configured.
+
+## Project structure
+
+| Path                                  | Purpose                                               |
+|---------------------------------------|-------------------------------------------------------|
+| `services/OpenAIServiceImpl`          | Builds the prompt and registers the function callback |
+| `functions/WeatherServiceFunction`    | Calls API Ninjas with latitude and longitude          |
+| `model/WeatherRequest`                | Schema supplied to the model for function arguments   |
+| `model/WeatherResponse`               | Maps the API Ninjas weather response                  |
+| `controllers/QuestionController`      | Exposes `POST /weather`                               |
+| `src/main/resources/application.yaml` | Spring AI and environment-variable configuration      |
+
+## Related Spring Framework Guru courses
+
+- [Spring Framework 6 - Beginner to Guru](https://www.udemy.com/course/spring-framework-6-beginner-to-guru/)
+- [API First Engineering with Spring Boot](https://www.udemy.com/course/api-first-engineering-with-spring-boot/)
+- [Introduction to Kafka with Spring Boot](https://www.udemy.com/course/introduction-to-kafka-with-spring-boot/)
+- [Spring Framework Guru blog](https://springframework.guru/)
