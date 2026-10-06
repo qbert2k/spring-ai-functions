@@ -131,8 +131,118 @@ Example response:
 
 The request body contains one natural-language question. Include the location's
 latitude and longitude in the question so the model can populate the weather
-function arguments reliably. The model can convert units and tailor the answer,
-but the weather service itself returns metric values.
+function arguments reliably. For city-based questions, provide a city name
+instead; the model can call `CityInfo` first and pass the returned coordinates
+to `CurrentWeather`. The model can convert units and tailor the answer, but the
+weather service itself returns metric values.
+
+### CityInfo: city profile
+
+This request uses only `CityInfo` to look up facts about a city:
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Tell me about San Francisco. Which country and region is it in, what is its population, what are its coordinates, and is it a national capital?"
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "San Francisco is located in the region of California, United States. It is not a national capital. The population of San Francisco is approximately 3,592,294 people. The coordinates for San Francisco are approximately 37.7562° N latitude and -122.443° E longitude."
+}
+```
+
+### CityInfo: resolve an ambiguous city
+
+This is useful for seeing how the assistant handles a city name that may refer
+to multiple places:
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Find information about Springfield, including its country, region, population, and coordinates. If there are multiple possible cities, list the matches and ask me which one I mean."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "Springfield is located in the region of Massachusetts, United States. It has a population of approximately 623,401 people. The city's coordinates are 42.1155° latitude and -72.5395° longitude."
+}
+```
+
+> **Note:** This run returned only one Springfield match, so the assistant did
+> not ask for clarification. The city lookup API or model may select a single
+> result instead of exposing every possible match. For reliable results, include
+> a state, region, or country in the question when a city name is ambiguous.
+
+### CityInfo + CurrentWeather: plan an outdoor wedding
+
+This request asks for city facts and current conditions. The assistant should
+look up the city first, then use the returned coordinates for weather:
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "We are planning an outdoor wedding in Florence, Italy. First identify the city and region, then check the current weather there. Is the weather suitable for a ceremony and dinner outside? Include temperature, rain, humidity, wind, and cloud cover in Celsius and km/h."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "Florence is a city in the Tuscany region of Italy. \n\nAs for the current weather, it is clear with 3% cloud cover. The temperature is 19°C. The humidity is at 60%. There is a very light breeze blowing at a speed of 1.03 km/h. There is no report of any rain.\n\nConsidering these factors, the weather seems quite suitable for an outdoor wedding ceremony and dinner. However, please note that weather conditions can change rapidly, so you may want to have a backup plan in place."
+}
+```
+
+### CityInfo + CurrentWeather: choose a hiking destination
+
+This example combines location lookup, weather retrieval, and a practical
+recommendation:
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "I am choosing between a day hike near Vancouver, Canada and one near Seattle, USA. Use city information and current weather for both places, then compare the conditions and recommend which location is better. Use Fahrenheit and miles per hour."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "Here is the comparison between the two locations:\n\n**Vancouver, Canada:**\n- Weather: Overcast clouds\n- Temperature: 18°C (64.4°F)\n- Humidity: 75%\n- Wind Speed: 4.47 m/s (10 mph)\n\n**Seattle, USA:**\n- Weather: Overcast clouds\n- Temperature: 18°C (64.4°F)\n- Humidity: 72%\n- Wind Speed: 5.66 m/s (12.7 mph)\n\nGiven the similar weather conditions, humidity, and temperature, both locations are suitable for a hike. However, Vancouver has slightly less wind speed which may be more favorable for hiking. Therefore, I would recommend Vancouver, Canada for your day hike."
+}
+```
+
+### CityInfo + CurrentWeather: sunrise photography
+
+Ask for city metadata and weather context for a specific activity:
+
+```bash
+curl --location 'http://localhost:8080/weather' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "I want to photograph sunrise in Reykjavik, Iceland. Identify the city, then check its current weather and tell me whether the conditions look promising for outdoor photography. Mention cloud cover, rain, wind, temperature, and the city coordinates."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "Reykjavik, the capital of Iceland, is located at the coordinates 64.1475° N, -21.935° W. It has a population of approximately 128,793 people.\n\nAs for the current weather in Reykjavik, it is characterized by scattered clouds with a cloud cover of 43%. The temperature is currently 3°C (37.4°F) and it feels like 1°C (33.8°F). The wind is blowing from the southeast at a speed of 2.06 m/s (4.6 mph). There is no rain reported.\n\nGiven these conditions, it seems like you might have a decent chance of capturing a beautiful sunrise, assuming the cloud cover doesn't become too dense. Safe travels and happy photographing!"
+}
+```
 
 ## Build and test
 
@@ -157,8 +267,11 @@ Tests that load the Spring context require `OPENAI_API_KEY` and
 |---------------------------------------|-------------------------------------------------------|
 | `services/OpenAIServiceImpl`          | Builds the prompt and registers the function callback |
 | `functions/WeatherServiceFunction`    | Calls API Ninjas with latitude and longitude          |
+| `functions/CityServiceFunction`       | Looks up city information by name                    |
 | `model/WeatherRequest`                | Schema supplied to the model for function arguments   |
 | `model/WeatherResponse`               | Maps the API Ninjas weather response                  |
+| `model/CityRequest`                   | Schema supplied to the model for city lookups         |
+| `model/CityResponse`                  | Maps city lookup results                              |
 | `controllers/QuestionController`      | Exposes `POST /weather`                               |
 | `src/main/resources/application.yaml` | Spring AI and environment-variable configuration      |
 
