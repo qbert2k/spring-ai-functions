@@ -264,6 +264,136 @@ Example response:
 }
 ```
 
+## Stock prices
+
+The `POST /stock` endpoint uses the `CurrentStockPrice` function to retrieve
+stock quote data from [API Ninjas](https://api-ninjas.com/api/stockprice). The
+model maps the function result to a `StockPriceResponse` containing the ticker,
+company name, current price, exchange, update timestamp, currency, trading
+volume, previous closing price, and price change.
+
+The request body contains one natural-language question. Include a ticker
+symbol when possible so the model can call the stock function reliably.
+The `updated` value is a Unix timestamp for when the quote was struck, not when
+the request was served. On the API Ninjas free plan, `price` represents the
+most recent completed trading session; paid plans provide live prices during
+market hours. `previous_close` and `change` can be `null` when historical
+session data is unavailable.
+
+### Current price: AAPL
+
+```bash
+curl --location 'http://localhost:8080/stock' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "What is the current price of AAPL? Include the company name, exchange, currency, previous close, price change, trading volume, and the time of the latest update."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current stock price of Apple Inc. (AAPL) is $336.64. This is traded on the NASDAQ exchange and the currency is USD. The previous close was at $340.42, which is a price change of -$3.78. The trading volume is 37,881,199. The time of the latest update is 1791576000."
+}
+```
+
+### Compare today with the previous close
+
+```bash
+curl --location 'http://localhost:8080/stock' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Check MSFT and explain whether its current price is up or down compared with the previous close. Calculate the percentage change, and include the exchange, currency, volume, and latest update time."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current price of Microsoft Corporation (MSFT) stock is $535.07. It's up from the previous close of $522.61, with a change of $12.46. This represents a percentage increase of approximately 2.38%. The stock is traded on the NASDAQ exchange. The volume of shares traded is 18,500,612. The latest update time for this information is 1791576000 (UNIX timestamp). Please note that the stock market is dynamic, and prices can change rapidly."
+}
+```
+
+### Inspect an index quote
+
+Stock and index ticker symbols are supported, including symbols such as `^DJI`:
+
+```bash
+curl --location 'http://localhost:8080/stock' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Look up the Dow Jones Industrial Average using ticker ^DJI. Report the current quote, exchange, currency, trading volume, previous close, absolute change, and the UTC time represented by the Unix update timestamp."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current quote for the Dow Jones Industrial Average (^DJI) is $51654.95. This information is coming from the INDEX exchange. The trading volume is 339477384. The previous close was at $51231.64, which means there has been an absolute change of $423.31. Please note that the currency is not specified for this index. The information was last updated at the UTC time corresponding to the Unix timestamp 1791576000."
+}
+```
+
+### Investor-friendly snapshot
+
+```bash
+curl --location 'http://localhost:8080/stock' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Give me a concise investor snapshot for NVDA: company name, current price, currency, exchange, change from the previous close, trading volume, and when this quote was last updated. Clearly label each value."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "Here is the investor snapshot for NVDA:\n\n- Company Name: NVIDIA Corporation\n- Current Price: $229.28\n- Currency: USD\n- Exchange: NASDAQ\n- Change from Previous Close: -$1.2\n- Trading Volume: 84,645,559\n- Last Updated: 1791576000"
+}
+```
+
+### Plain-English market briefing
+
+```bash
+curl --location 'http://localhost:8080/stock' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "Act as a market briefing assistant for TSLA. Summarize today'\''s quote in plain English, say whether momentum is positive or negative based on the change, and mention the current price, previous close, volume, exchange, currency, and update time."
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current stock price for Tesla, Inc. (TSLA) on the NASDAQ is $382.70 USD. The stock has seen an increase from the previous close, which was at $375.00 USD, indicating a positive momentum. The volume of trading stands at 38,952,426. The last update was made at 1791576000. Please note that stock prices are constantly changing and it's important to check for the most recent updates."
+}
+```
+
+### Ask by company name
+
+```bash
+curl --location 'http://localhost:8080/stock' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "question": "What is the current stock price of Apple?"
+  }'
+```
+
+Example response:
+
+```json
+{
+  "answer": "The current stock price of Apple Inc. (AAPL) is $336.64."
+}
+```
+
+If a company name is provided without a ticker symbol, the assistant may ask for
+the ticker before retrieving the quote. This keeps the function call
+unambiguous—for example, use `AAPL` for Apple.
+
 ## Build and test
 
 Compile and package without running tests:
